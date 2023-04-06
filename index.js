@@ -1,4 +1,5 @@
-const Discord = require("discord.js");
+const { Client, GatewayIntentBits } = require('discord.js');
+const { joinVoiceChannel } = require('@discordjs/voice');
 const { prefix } = require("./config.json");
 const configs = require("./config.json");
 const ytdl = require("ytdl-core");
@@ -6,10 +7,15 @@ const express = require('express');
 const app = express();
 const google = require("googleapis");
 
-const client = new Discord.Client({ intents: [
-  Discord.GatewayIntentBits.Guilds,
-  Discord.GatewayIntentBits.GuildMessages
-]})
+const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildMembers
+	],
+});
 
 const queue = new Map();
 
@@ -38,7 +44,7 @@ client.once("disconnect", () => {
   console.log("Disconnect!");
 });
 
-client.on("message", async message => {
+client.on('messageCreate', (message) => {
   if (message.author.bot) return;
   if (!message.content.startsWith(prefix)) return;
 
