@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel } = require('@discordjs/voice');
+const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 const { prefix } = require("./config.json");
 const configs = require("./config.json");
 const ytdl = require("ytdl-core");
@@ -115,13 +115,18 @@ async function pullsong(args, callback){
 async function execute(message, serverQueue) {
   const args = message.content.split(" ");
 
-  const voiceChannel = message.member.voice.channel;
+  const voiceChannel = joinVoiceChannel({
+    channelId: message.channelId,
+    guildId: message.guildId,
+    adapterCreator: message.guild.voiceAdapterCreator
+  });
+
   if (!voiceChannel)
     return message.channel.send(
       "Entre em um canal do discord para eu te identificar"
     );
-  const permissions = voiceChannel.permissionsFor(message.client.user);
-  if (!permissions.has("CONNECT") || !permissions.has("SPEAK")) {
+
+  if (!message.member.permissions.has("CONNECT") || !message.member.permissions.has("SPEAK")) {
     return message.channel.send(
       "Estou sem permissão"
     );
@@ -142,17 +147,17 @@ async function execute(message, serverQueue) {
         playing: true
       };
 
-      queue.set(message.guild.id, queueContruct);
+      queue.set(message.guildId, queueContruct);
 
       queueContruct.songs.push(song);
 
       try {
-        var connection = await voiceChannel.join();
+        const connection = getVoiceConnection(message.guildId);
         queueContruct.connection = connection;
         play(message.guild, queueContruct.songs[0]);
       } catch (err) {
         console.log(err);
-        queue.delete(message.guild.id);
+        queue.delete(message.guildId);
         return message.channel.send(err);
       }
     } else {
