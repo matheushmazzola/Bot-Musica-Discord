@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits } = require('discord.js');
-const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
+const { joinVoiceChannel, getVoiceConnection, entersState, VoiceConnectionStatus } = require('@discordjs/voice');
 const { prefix } = require("./config.json");
 const configs = require("./config.json");
 const ytdl = require("ytdl-core");
@@ -13,7 +13,9 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.GuildMembers
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildPresences
 	],
 });
 
@@ -152,9 +154,8 @@ async function execute(message, serverQueue) {
       queueContruct.songs.push(song);
 
       try {
-        const connection = getVoiceConnection(message.guildId);
-        queueContruct.connection = connection;
-        play(message.guild, queueContruct.songs[0]);
+        voiceChannel.on(VoiceConnectionStatus.Ready, () => {console.log('conectado!');});
+        play(message.guild, queueContruct.songs[0], voiceChannel);
       } catch (err) {
         console.log(err);
         queue.delete(message.guildId);
@@ -195,8 +196,8 @@ function stop(message, serverQueue) {
   serverQueue.connection.dispatcher.end();
 }
 
-function play(guild, song) {
-
+function play(guild, song, connection) {
+console.log(connection);
   const serverQueue = queue.get(guild.id);
   if (!song) {
     serverQueue.voiceChannel.leave();
